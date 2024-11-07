@@ -83,7 +83,7 @@ async def check_online_status():
                 log_message = f"Оба пользователя стали онлайн с {start_time.strftime('%H:%M:%S')}\n🤡 #Пон"
                 await send_log_to_channel(log_message)
 
-        elif start_time is not None:
+        elif any(user_status.values()) and start_time is not None:
             end_time = datetime.now()
             shared_online_duration = end_time - start_time
             # Лог отправляется только если оба пользователя были онлайн одновременно не менее 10 секунд
