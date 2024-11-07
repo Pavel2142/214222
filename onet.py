@@ -47,6 +47,7 @@ async def check_online_status():
     delay = 10  # Начальная задержка
     while True:
         status_list = []  # Список для формирования статусов пользователей
+        all_offline = True  # Переменная для проверки, что оба пользователя оффлайн
         for username in users_to_track:
             try:
                 user = await client.get_entity(username)
@@ -69,6 +70,8 @@ async def check_online_status():
                 user_status[username] = online_now
                 status = "Онлайн" if online_now else "Оффлайн"
                 status_list.append(f"{username}: {status}")
+                if online_now:  # Если хотя бы один пользователь онлайн
+                    all_offline = False
 
             except Exception as e:
                 print(f"Ошибка при получении данных о {username}: {e}")
@@ -84,9 +87,20 @@ async def check_online_status():
                 await send_log_to_channel(log_message)
 
         elif any(user_status.values()) and start_time is not None:
+            # Один из пользователей вышел — логируем общий онлайн
             end_time = datetime.now()
             shared_online_duration = end_time - start_time
             # Лог отправляется только если оба пользователя были онлайн одновременно не менее 10 секунд
+            if shared_online_duration >= min_shared_online_duration:
+                log_message = f"Оба пользователя были онлайн с {start_time.strftime('%H:%M:%S')} до {end_time.strftime('%H:%M:%S')}\n" \
+                              f"Общее время онлайн: {str(shared_online_duration).split('.')[0]} 🤡 #Пон"
+                await send_log_to_channel(log_message)
+            start_time = None
+
+        # Если оба пользователя оффлайн — фиксируем общий онлайн
+        elif all_offline and start_time is not None:
+            end_time = datetime.now()
+            shared_online_duration = end_time - start_time
             if shared_online_duration >= min_shared_online_duration:
                 log_message = f"Оба пользователя были онлайн с {start_time.strftime('%H:%M:%S')} до {end_time.strftime('%H:%M:%S')}\n" \
                               f"Общее время онлайн: {str(shared_online_duration).split('.')[0]} 🤡 #Пон"
